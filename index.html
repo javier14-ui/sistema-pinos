@@ -234,7 +234,6 @@
         map.setView([500, 500], map.getZoom());
     }
 
-    // 🎯 MANEJO DINÁMICO DE CURSORES
     function seleccionarHerramientaRapida(tipo) {
         document.getElementById("btnToolSeparado").classList.remove("herramienta-activa-amarillo");
         document.getElementById("btnToolVendido").classList.remove("herramienta-activa-rojo");
@@ -290,7 +289,6 @@
         return L.divIcon({ html: htmlSvg, className: 'pin-custom-map', iconSize: [30, 30], iconAnchor: [15, 30] });
     }
 
-    // 🔓 CORRECCIÓN DE EVENTOS PARA ELIMINAR EL BLOQUEO DE CLIC
     function renderizarMarcadorLote(id) {
         let lote = baseDatosLotes[id]; if (capasMarcadores[id]) map.removeLayer(capasMarcadores[id]);
         if (lote.estado === "Disponible") return;
@@ -298,9 +296,8 @@
         let marcador = L.marker([lote.lat, lote.lng], { icon: crearIconoSvgPin(lote.estado), interactive: true });
         marcador.bindTooltip(`<b>Sect ${lote.sector} - Mz ${lote.manzana} - Lt ${lote.numero_lote}</b><br>Estado: ${lote.estado}`, { direction: 'top', offset: [0, -30] });
         
-        // El truco está en escuchar el 'mousedown' o 'click' deteniendo la propagación correctamente
         marcador.on('click', function(e) {
-            L.DomEvent.stopPropagation(e); // Evita que el mapa registre un clic de creación detrás del pin
+            L.DomEvent.stopPropagation(e);
             
             if (herramientaActiva === 'Limpiar') {
                 if (confirm(`¿Eliminar permanentemente el Lote ${lote.numero_lote} de la Mz ${lote.manzana}?`)) { 
@@ -361,13 +358,25 @@
         alert("🎉 ¡Lote sincronizado en la nube de Pinos con éxito!");
     }
 
+    // 🛡️ BOTÓN DE ELIMINAR CON CONFIRMACIÓN DE SEGURIDAD INTEGRADA
     async function eliminarLoteActivo() {
-        if (!loteUltimoSeleccionado) return; let targetId = loteUltimoSeleccionado;
-        let { error } = await supabaseClient.from('lotes_pinos').delete().eq('id_lote', targetId); if (error) return alert("Error: " + error.message);
+        if (!loteUltimoSeleccionado) return; 
+        let targetId = loteUltimoSeleccionado;
+        let dataLote = baseDatosLotes[targetId];
+
+        // 🚨 ESCUDO INTERNO: Pregunta antes de romper la base de datos
+        if (!confirm(`⚠️ ¿ESTÁS SEGURO?\n\nVas a eliminar por completo la ubicación física del Lote ${dataLote.numero_lote} (Mz ${dataLote.manzana}). Se borrarán todos los datos del cliente permanentemente.`)) {
+            return; // Cancela la ejecución si el usuario se arrepiente
+        }
+
+        let { error } = await supabaseClient.from('lotes_pinos').delete().eq('id_lote', targetId); 
+        if (error) return alert("Error: " + error.message);
+        
         if(capasMarcadores[targetId]) map.removeLayer(capasMarcadores[targetId]);
         delete capasMarcadores[targetId]; delete baseDatosLotes[targetId]; loteUltimoSeleccionado = null;
+        
         document.getElementById("formManzana").value = ""; document.getElementById("formNumLote").value = ""; document.getElementById("formNombre").value = ""; document.getElementById("formApellido").value = ""; document.getElementById("formDni").value = ""; document.getElementById("formPrecio").value = ""; document.getElementById("formVendedor").value = "";
-        alert("Ubicación eliminada limpiamente.");
+        alert("Ubicación eliminada limpiamente de la nube.");
     }
 
     function cerrarSesion() { location.reload(); }
