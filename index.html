@@ -3,55 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sistema Inmobiliaria - PINOS Performance Pro</title>
+    <title>Sistema Inmobiliaria - PINOS Universal Cloud</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; background: #0b0f19; color: #f8fafc; overflow: hidden; }
-        
-        /* LOGIN */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #070a13; display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .login-card { background: #1e293b; padding: 30px; border-radius: 12px; border: 1px solid #334155; width: 85%; max-width: 340px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; }
         .login-card h3 { margin: 0; text-align: center; color: #38bdf8; font-size: 20px; }
-
-        /* INTERFAZ GENERAL (PC POR DEFECTO) */
         #wrapper { display: flex; height: 100vh; width: 100vw; flex-direction: row; visibility: hidden; }
         #mapa { flex-grow: 1; height: 100%; background: #070a13; }
         #sidebar { width: 440px; background: #1e293b; padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; border-left: 1px solid #334155; box-shadow: -3px 0 20px rgba(0,0,0,0.5); box-sizing: border-box; }
-        
         h2 { margin: 0; color: #38bdf8; font-weight: 600; border-bottom: 2px solid #334155; padding-bottom: 6px; font-size: 18px; }
         .seccion { background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 6px; }
         label { font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase; }
-        
-        input[type="text"], input[type="password"], input[type="number"], select { 
-            padding: 9px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 13px; box-sizing: border-box; width: 100%; 
-        }
-        
+        input[type="text"], input[type="password"], input[type="number"], select { padding: 9px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 13px; box-sizing: border-box; width: 100%; }
         button { padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .btn-success { background: #10b981; color: white; } .btn-success:hover { background: #059669; }
         .btn-danger { background: #ef4444; color: white; } .btn-danger:hover { background: #dc2626; }
         .btn-primary { background: #0284c7; color: white; } .btn-primary:hover { background: #0369a1; }
         .btn-warn { background: #f59e0b; color: white; } .btn-warn:hover { background: #d97706; }
         .btn-excel { background: #16a34a; color: white; font-size: 13px; border: 1px solid #22c55e; width: 100%; } .btn-excel:hover { background: #15803d; }
-        
         .slider-group { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #cbd5e1; }
         .slider-group input { flex-grow: 1; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
         .user-active-box { background: #334155; padding: 8px; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #a855f7; }
         .info-leyenda { font-size: 11px; color: #cbd5e1; display: flex; justify-content: space-around; background: #334155; padding: 6px; border-radius: 6px; }
-
         .herramienta-activa-amarillo { border: 2px solid #f59e0b !important; background: #78350f !important; box-shadow: 0 0 12px rgba(245, 158, 11, 0.6); }
         .herramienta-activa-rojo { border: 2px solid #ef4444 !important; background: #7f1d1d !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); }
         .herramienta-activa-borrar { border: 2px solid #ffffff !important; background: #334155 !important; box-shadow: 0 0 12px rgba(255, 255, 255, 0.4); }
-
-        @media (max-width: 768px) {
-            #wrapper { flex-direction: column; }
-            #mapa { height: 50vh; width: 100vw; }
-            #sidebar { width: 100vw; height: 50vh; border-left: none; border-top: 2px solid #334155; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); }
-        }
+        @media (max-width: 768px) { #wrapper { flex-direction: column; } #mapa { height: 50vh; width: 100vw; } #sidebar { width: 100vw; height: 50vh; border-left: none; border-top: 2px solid #334155; } }
     </style>
 </head>
 <body>
@@ -76,19 +60,16 @@
     <div id="mapa"></div>
     <div id="sidebar">
         <h2>Panel de Control - PINOS Cloud</h2>
-        
         <div class="user-active-box">
             <span>👤 Sesión: <b id="txtOperadorActivo" style="color:#a855f7;">---</b></span>
             <button class="btn-danger" style="padding:4px 8px; font-size:10px;" onclick="cerrarSesion()">Salir</button>
         </div>
-
         <div class="seccion">
             <label>🎮 Control de Vista de Plano (Sin Trabes)</label>
             <div class="slider-group">
                 <span>Zoom:</span><input type="range" id="slideZoom" min="-1.5" max="3" step="0.1" value="-0.5" oninput="controlarZoomLocal()">
             </div>
         </div>
-
         <div class="seccion" id="secHerramientas">
             <label>🛠️ Marcación Rápida de Lotes</label>
             <div class="grid-3">
@@ -98,7 +79,6 @@
             </div>
             <p id="txtEstadoHerramienta" style="font-size:10px; color:#94a3b8; margin:2px 0 0 0; text-align: center;">Estado: Navegación Libre</p>
         </div>
-
         <div class="seccion" id="secConfigMap" style="display: none;">
             <label>📐 Ajustes de Tamaño del Plano (Admin)</label>
             <div class="slider-group">
@@ -108,19 +88,16 @@
                 <span>Alto:</span><input type="range" id="imgAlto" min="200" max="4000" value="900" oninput="ajustarImagenLocal()">
             </div>
             <label style="margin-top: 5px;">📁 Cargar Imagen del Plano</label>
-            <input type="file" id="inputLocalFile" accept="image/*" onchange="procesarArchivoLocal(event)">
-            <button class="btn-primary" style="margin-top: 5px;" onclick="guardarConfiguracionLocal()">💾 Guardar Configuración Fija</button>
+            <input type="file" id="inputLocalFile" accept="image/*">
+            <button class="btn-primary" style="margin-top: 5px;" onclick="guardarConfiguracionCloud()">🌐 Guardar en Internet para todos</button>
         </div>
-
         <div class="info-leyenda">
             <span>🟡 Separado</span>
             <span>🔴 Vendido</span>
             <span style="color: #94a3b8;">* Sin Marca = Disponible</span>
         </div>
-
         <div class="seccion">
             <label>📝 Datos del Lote Seleccionado</label>
-            
             <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 6px; width: 100%; box-sizing: border-box;">
                 <div style="display: flex; flex-direction: column; gap: 2px;">
                     <label style="font-size: 8px; color: #38bdf8;">Sector</label>
@@ -139,25 +116,21 @@
                     <input type="text" id="formNumLote" placeholder="Ej: 1">
                 </div>
             </div>
-            
             <select id="formEstado" onchange="evaluarEstadoVendedor()" style="margin-top: 4px;">
                 <option value="Separado">🟡 Separado</option>
                 <option value="Vendido">🔴 Vendido</option>
                 <option value="Disponible">🟢 Pasar a Disponible (Eliminar Marca)</option>
             </select>
-            
             <input type="text" id="formNombre" placeholder="Nombres del Cliente">
             <input type="text" id="formApellido" placeholder="Apellidos del Cliente">
             <input type="text" id="formDni" placeholder="DNI / Documento">
             <input type="number" id="formPrecio" placeholder="Precio de Venta (S/.)">
             <input type="text" id="formVendedor" readonly placeholder="Vendedor Responsable" style="background:#334155; color:#cbd5e1;">
-            
             <div class="grid-2">
                 <button class="btn-success" onclick="actualizarDatosLote()">💾 Guardar Datos</button>
                 <button class="btn-danger" id="btnEliminarLote" onclick="eliminarLoteActivo()">🗑️ Eliminar Ubicación</button>
             </div>
         </div>
-
         <div class="seccion">
             <label>📊 Reportes Generales</label>
             <button class="btn-excel" onclick="exportarAExcel()">📥 Descargar Reporte Excel (.xlsx)</button>
@@ -173,41 +146,14 @@
         global: { headers: { 'x-pinos-auth': 'admin_firme_2026' } }
     });
 
-    // OPTIMIZACIÓN DE RENDIMIENTO EN RENDERING DE LEAFLET
     const map = L.map('mapa', {
-        crs: L.CRS.Simple,
-        minZoom: -1.5,
-        maxZoom: 3,
-        zoomSnap: 0.1,
-        zoomDelta: 0.5,
-        scrollWheelZoom: false,
-        touchZoom: true,
-        bounceAtZoomLimits: false, 
-        markerZoomAnimation: false, // Quita animaciones pesadas de marcadores al hacer zoom
-        fadeAnimation: true
+        crs: L.CRS.Simple, minZoom: -1.5, maxZoom: 3, zoomSnap: 0.1, zoomDelta: 0.5, scrollWheelZoom: false, touchZoom: true, bounceAtZoomLimits: false, markerZoomAnimation: false, fadeAnimation: true
     }).setView([500, 500], -0.5);
     
-    let baseDatosLotes = {}; 
-    let capasMarcadores = {}; 
-    let listaUsuariosCloud = {}; 
-    
-    let imgOverlay = null;
-    let imgBase64Privada = ""; 
-    let loteUltimoSeleccionado = null;
-    
-    let sesionUsuario = null;
-    let planoAnchoFijo = 1200;
-    let planoAltoFijo = 900;
-
-    let herramientaActiva = null; 
-
-    let dbIndexed;
-    let requestDB = indexedDB.open("PinosStorageLocal", 1);
-    requestDB.onupgradeneeded = function(e) {
-        let db = e.target.result;
-        if (!db.objectStoreNames.contains("config")) db.createObjectStore("config");
-    };
-    requestDB.onsuccess = function(e) { dbIndexed = e.target.result; };
+    let baseDatosLotes = {}; let capasMarcadores = {}; let listaUsuariosCloud = {};
+    let imgOverlay = null; let loteUltimoSeleccionado = null;
+    let sesionUsuario = null; let planoAnchoFijo = 1200; let planoAltoFijo = 900;
+    let herramientaActiva = null;
 
     async function procesarAutenticacion() {
         let userSelect = document.getElementById("loginUsuario").value;
@@ -223,73 +169,70 @@
         document.getElementById("txtOperadorActivo").innerText = sesionUsuario.nombre_usuario + " (" + sesionUsuario.rol + ")";
 
         configurarInterfazPorRol();
-        await cargarConfiguracionCloudYLocal();
+        await cargarConfiguracionCloud();
         await cargarUsuariosDesdeCloud();
         await cargarLotesDesdeCloud();
 
-        // MANEJO DE EVENTO OPTIMIZADO ASÍNCRONAMENTE CON REQUESTANIMATIONFRAME
-        map.on('zoomend', function() {
-            window.requestAnimationFrame(() => {
-                document.getElementById("slideZoom").value = map.getZoom();
-            });
-        });
+        map.on('zoomend', function() { window.requestAnimationFrame(() => { document.getElementById("slideZoom").value = map.getZoom(); }); });
         setTimeout(() => { map.invalidateSize(); }, 300);
     }
 
     function configurarInterfazPorRol() {
-        if (sesionUsuario.rol === 'Admin') {
-            document.getElementById("secConfigMap").style.display = "flex";
-        } else {
-            document.getElementById("secConfigMap").style.display = "none";
+        if (sesionUsuario.rol === 'Admin') { document.getElementById("secConfigMap").style.display = "flex"; }
+        else { document.getElementById("secConfigMap").style.display = "none"; }
+    }
+
+    function controlarZoomLocal() { let val = parseFloat(document.getElementById("slideZoom").value); window.requestAnimationFrame(() => { map.setZoom(val); }); }
+
+    // DESCARGAR IMAGEN DESDE EL STORAGE GLOBAL DE SUPABASE AUTOMÁTICAMENTE
+    async function cargarConfiguracionCloud() {
+        let { data } = await supabaseClient.from('configuracion_pinos').select('*').eq('id', 'plano_principal').single();
+        if (data) {
+            planoAnchoFijo = parseFloat(data.ancho);
+            planoAltoFijo = parseFloat(data.alto);
+            document.getElementById("imgAncho").value = planoAnchoFijo;
+            document.getElementById("imgAlto").value = planoAltoFijo;
         }
+        // Construimos el enlace público de Supabase para descargar la imagen
+        let urlPlanoPublico = `${SUPABASE_URL}/storage/v1/object/public/planos_pinos/plano_asociacion.png?t=${new Date().getTime()}`;
+        redibujarImagenFija(urlPlanoPublico);
     }
 
-    // MANEJO DE CONTROL LOCAL ASÍNCRONO PARA EVITAR BLOCKING UI (ALIVIA EL INP ISSUE)
-    function controlarZoomLocal() {
-        let val = parseFloat(document.getElementById("slideZoom").value);
-        window.requestAnimationFrame(() => {
-            map.setZoom(val);
-        });
-    }
-
-    function cargarConfiguracionCloudYLocal() {
-        return new Promise((resolve) => {
-            supabaseClient.from('configuracion_pinos').select('*').eq('id', 'plano_principal').single().then(({data}) => {
-                if (data) {
-                    planoAnchoFijo = parseFloat(data.ancho);
-                    planoAltoFijo = parseFloat(data.alto);
-                    document.getElementById("imgAncho").value = planoAnchoFijo;
-                    document.getElementById("imgAlto").value = planoAltoFijo;
-                }
-                let tx = dbIndexed.transaction("config", "readonly");
-                let store = tx.objectStore("config");
-                let requestImg = store.get("imagen_plano");
-                requestImg.onsuccess = function() {
-                    if (requestImg.result) { imgBase64Privada = requestImg.result; redibujarImagenFija(); }
-                    resolve();
-                };
-            });
-        });
-    }
-
-    function procesarArchivoLocal(event) {
+    // CARGAR ARCHIVO DESDE LA LAPTOP DEL ADMIN Y SUBIRLO AUTOMÁTICAMENTE AL STORAGE GLOBAL
+    async function guardarConfiguracionCloud() {
         if(sesionUsuario.rol !== 'Admin') return;
-        let file = event.target.files[0];
-        if (!file) return;
-        let reader = new FileReader();
-        reader.onload = function(e) { imgBase64Privada = e.target.result; redibujarImagenFija(); };
-        reader.readAsDataURL(file);
+        let fileInput = document.getElementById("inputLocalFile");
+        let w = parseFloat(document.getElementById("imgAncho").value);
+        let h = parseFloat(document.getElementById("imgAlto").value);
+
+        await supabaseClient.from('configuracion_pinos').upsert({ id: 'plano_principal', ancho: w, alto: h });
+
+        if (fileInput.files.length > 0) {
+            let file = fileInput.files[0];
+            // Subimos la imagen reemplazando el archivo anterior en la nube
+            let { error } = await supabaseClient.storage.from('planos_pinos').upload('plano_asociacion.png', file, { cacheControl: '0', upsert: true });
+            if (error) return alert("Error al subir archivo a la nube: " + error.message);
+        }
+        
+        alert("🎉 ¡Plano e implicaciones grabadas en Internet para todo tu equipo!");
+        await cargarConfiguracionCloud();
     }
 
-    function ajustarImagenLocal() { if(sesionUsuario.rol === 'Admin' && imgBase64Privada) redibujarImagenFija(); }
+    function ajustarImagenLocal() { 
+        let urlPlanoPublico = `${SUPABASE_URL}/storage/v1/object/public/planos_pinos/plano_asociacion.png`;
+        redibujarImagenFija(urlPlanoPublico); 
+    }
 
-    function redibujarImagenFija() {
-        if (!imgBase64Privada) return;
+    function redibujarImagenFija(urlImagen) {
         if (imgOverlay) map.removeLayer(imgOverlay);
         let w = sesionUsuario.rol === 'Admin' ? parseFloat(document.getElementById("imgAncho").value) : planoAnchoFijo;
         let h = sesionUsuario.rol === 'Admin' ? parseFloat(document.getElementById("imgAlto").value) : planoAltoFijo;
         let limites = [[500 - h/2, 500 - w/2], [500 + h/2, 500 + w/2]];
-        imgOverlay = L.imageOverlay(imgBase64Privada, limites).addTo(map);
+        
+        imgOverlay = L.imageOverlay(urlImagen, limites);
+        imgOverlay.on('error', function() { console.log("Falta cargar el plano principal de internet."); });
+        imgOverlay.addTo(map);
+        
         map.setMaxBounds(limites.map(c => [c[0] * 1.2, c[1] * 1.2]));
         map.setView([500, 500], map.getZoom());
     }
@@ -299,9 +242,7 @@
         document.getElementById("btnToolVendido").classList.remove("herramienta-activa-rojo");
         document.getElementById("btnToolLimpiar").classList.remove("herramienta-activa-borrar");
         document.getElementById("btnToolLimpiar").style.background = "#475569";
-
         herramientaActiva = tipo;
-        
         if (tipo === 'Separado') {
             document.getElementById("btnToolSeparado").classList.add("herramienta-activa-amarillo");
             document.getElementById("txtEstadoHerramienta").innerText = "🟡 Modo Separación Listo (Haz un clic en el plano)";
@@ -324,224 +265,93 @@
     }
 
     map.on('click', function(e) {
-        if (!imgOverlay || !herramientaActiva || herramientaActiva === 'Limpiar') return;
-
-        let lat = Math.round(e.latlng.lat * 100) / 100;
-        let lng = Math.round(e.latlng.lng * 100) / 100;
-        
+        if (!herramientaActiva || herramientaActiva === 'Limpiar') return;
+        let lat = Math.round(e.latlng.lat * 100) / 100; let lng = Math.round(e.latlng.lng * 100) / 100;
         let tempSector = prompt("Ingresa el Sector (A, B o C):");
         if (!tempSector || !['A','B','C','a','b','c'].includes(tempSector.trim())) return alert("Sector inválido. Usa A, B o C.");
         let sectorFinal = tempSector.trim().toUpperCase();
-        
-        let tempManzana = prompt("Ingresa el Número de Manzana (Ej: 34):");
-        if (!tempManzana) return;
-        
-        let tempNum = prompt("Ingresa el Número de Lote:");
-        if (!tempNum) return;
+        let tempManzana = prompt("Ingresa el Número de Manzana (Ej: 34):"); if (!tempManzana) return;
+        let tempNum = prompt("Ingresa el Número de Lote:"); if (!tempNum) return;
 
         let uniqueId = sectorFinal + "-" + tempManzana.trim() + "-" + tempNum.trim();
-
-        baseDatosLotes[uniqueId] = {
-            id: uniqueId, sector: sectorFinal, manzana: tempManzana.trim(), numero_lote: tempNum.trim(), lat: lat, lng: lng, estado: herramientaActiva,
-            nombre: "", apellido: "", dni: "", precio: "", id_vendedor: sesionUsuario.id_usuario
-        };
-        renderizarMarcadorLote(uniqueId);
-        seleccionarLote(uniqueId);
-        resetearBotonesHerramientas();
+        baseDatosLotes[uniqueId] = { id: uniqueId, sector: sectorFinal, manzana: tempManzana.trim(), numero_lote: tempNum.trim(), lat: lat, lng: lng, estado: herramientaActiva, nombre: "", apellido: "", dni: "", precio: "", id_vendedor: sesionUsuario.id_usuario };
+        renderizarMarcadorLote(uniqueId); seleccionarLote(uniqueId); resetearBotonesHerramientas();
     });
 
     function crearIconoSvgPin(estadoLote) {
         let col = estadoLote === "Separado" ? "#f59e0b" : "#ef4444";
-        let htmlSvg = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30">
-                <path fill="${col}" stroke="#ffffff" stroke-width="1.5" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-            </svg>
-        `;
+        let htmlSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30"><path fill="${col}" stroke="#ffffff" stroke-width="1.5" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
         return L.divIcon({ html: htmlSvg, className: 'pin-custom-map', iconSize: [30, 30], iconAnchor: [15, 30] });
     }
 
     function renderizarMarcadorLote(id) {
-        let lote = baseDatosLotes[id];
-        if (capasMarcadores[id]) map.removeLayer(capasMarcadores[id]);
-
-        if (lote.estado === "Disponible") return; 
+        let lote = baseDatosLotes[id]; if (capasMarcadores[id]) map.removeLayer(capasMarcadores[id]);
+        if (lote.estado === "Disponible") return;
 
         let marcador = L.marker([lote.lat, lote.lng], { icon: crearIconoSvgPin(lote.estado), interactive: true });
         marcador.bindTooltip(`<b>Sect ${lote.sector} - Mz ${lote.manzana} - Lt ${lote.numero_lote}</b><br>Estado: ${lote.estado}`, { direction: 'top', offset: [0, -30] });
-        
         marcador.on('click', function(e) {
-            L.DomEvent.stopPropagation(e); 
-            
+            L.DomEvent.stopPropagation(e);
             if (herramientaActiva === 'Limpiar') {
-                if (confirm(`⚠️ ALERTA DE SEGURIDAD\n\n¿Estás seguro de eliminar permanentemente el Lote ${lote.numero_lote} de la Mz ${lote.manzana} (Sector ${lote.sector})?`)) {
-                    loteUltimoSeleccionado = id;
-                    eliminarLoteActivo();
-                }
+                if (confirm(`¿Eliminar permanentemente el Lote ${lote.numero_lote} de la Mz ${lote.manzana}?`)) { loteUltimoSeleccionado = id; eliminarLoteActivo(); }
                 resetearBotonesHerramientas();
-            } else {
-                seleccionarLote(id);
-            }
+            } else { seleccionarLote(id); }
         });
-
-        capasMarcadores[id] = marcador;
-        marcador.addTo(map);
+        capasMarcadores[id] = marcador; marcador.addTo(map);
     }
 
     function seleccionarLote(id) {
-        loteUltimoSeleccionado = id;
-        let lote = baseDatosLotes[id];
-
+        loteUltimoSeleccionado = id; let lote = baseDatosLotes[id];
         for (let k in capasMarcadores) { if(capasMarcadores[k].getElement()) capasMarcadores[k].getElement().style.opacity = "0.5"; }
         if(capasMarcadores[id] && capasMarcadores[id].getElement()) capasMarcadores[id].getElement().style.opacity = "1.0";
-
-        document.getElementById("formSector").value = lote.sector;
-        document.getElementById("formManzana").value = lote.manzana;
-        document.getElementById("formNumLote").value = lote.numero_lote;
-        document.getElementById("formEstado").value = lote.estado;
-        document.getElementById("formNombre").value = lote.nombre;
-        document.getElementById("formApellido").value = lote.apellido;
-        document.getElementById("formDni").value = lote.dni;
-        document.getElementById("formPrecio").value = lote.precio;
+        document.getElementById("formSector").value = lote.sector; document.getElementById("formManzana").value = lote.manzana; document.getElementById("formNumLote").value = lote.numero_lote;
+        document.getElementById("formEstado").value = lote.estado; document.getElementById("formNombre").value = lote.nombre; document.getElementById("formApellido").value = lote.apellido;
+        document.getElementById("formDni").value = lote.dni; document.getElementById("formPrecio").value = lote.precio;
         document.getElementById("formVendedor").value = lote.id_vendedor ? listaUsuariosCloud[lote.id_vendedor] : "Sin asignar";
     }
 
-    function evaluarEstadoVendedor() {
-        let est = document.getElementById("formEstado").value;
-        if (est !== "Disponible") { document.getElementById("formVendedor").value = sesionUsuario.nombre_usuario; }
-        else { document.getElementById("formVendedor").value = "Sin asignar"; }
-    }
+    function evaluarEstadoVendedor() { let est = document.getElementById("formEstado").value; if (est !== "Disponible") { document.getElementById("formVendedor").value = sesionUsuario.nombre_usuario; } else { document.getElementById("formVendedor").value = "Sin asignar"; } }
 
     async function actualizarDatosLote() {
         if (!loteUltimoSeleccionado) return alert("Selecciona un lote.");
-        
-        let sec = document.getElementById("formSector").value.trim().toUpperCase();
-        let mz = document.getElementById("formManzana").value.trim();
-        let num = document.getElementById("formNumLote").value.trim();
+        let sec = document.getElementById("formSector").value.trim().toUpperCase(); let mz = document.getElementById("formManzana").value.trim(); let num = document.getElementById("formNumLote").value.trim();
         if (!sec || !mz || !num) return alert("Por favor, rellena Sector, Manzana y Lote.");
 
-        let nuevoId = sec + "-" + mz + "-" + num;
-        let dataVieja = baseDatosLotes[loteUltimoSeleccionado];
-        let estado = document.getElementById("formEstado").value;
-        
-        if (estado === "Disponible") {
-            if (!confirm(`⚠️ ESCUDO DE CONFIRMACIÓN\n\n¿Pasar este lote a Disponible? Se borrarán sus datos de la nube.`)) {
-                document.getElementById("formEstado").value = dataVieja.estado;
-                return;
-            }
-        }
+        let nuevoId = sec + "-" + mz + "-" + num; let dataVieja = baseDatosLotes[loteUltimoSeleccionado]; let estado = document.getElementById("formEstado").value;
+        if (estado === "Disponible" && !confirm(`¿Pasar este lote a Disponible? Se borrarán sus datos.`)) { document.getElementById("formEstado").value = dataVieja.estado; return; }
 
-        let sellerId = dataVieja.id_vendedor;
-        if (estado !== "Disponible") { if (!sellerId) sellerId = sesionUsuario.id_usuario; }
-        else { sellerId = null; }
+        let sellerId = dataVieja.id_vendedor; if (estado !== "Disponible") { if (!sellerId) sellerId = sesionUsuario.id_usuario; } else { sellerId = null; }
 
         if (loteUltimoSeleccionado !== nuevoId) {
             await supabaseClient.from('lotes_pinos').delete().eq('id_lote', loteUltimoSeleccionado);
             if(capasMarcadores[loteUltimoSeleccionado]) map.removeLayer(capasMarcadores[loteUltimoSeleccionado]);
-            delete capasMarcadores[loteUltimoSeleccionado];
-            delete baseDatosLotes[loteUltimoSeleccionado];
+            delete capasMarcadores[loteUltimoSeleccionado]; delete baseDatosLotes[loteUltimoSeleccionado];
         }
 
-        let payloadCloud = {
-            id_lote: nuevoId, sector: sec, manzana: mz, numero_lote: num, lat: dataVieja.lat, lng: dataVieja.lng, estado: estado,
-            nombre: estado === "Disponible" ? null : document.getElementById("formNombre").value.trim() || null,
-            apellido: estado === "Disponible" ? null : document.getElementById("formApellido").value.trim() || null,
-            dni: estado === "Disponible" ? null : document.getElementById("formDni").value.trim() || null,
-            precio: estado === "Disponible" ? null : (document.getElementById("formPrecio").value ? parseFloat(document.getElementById("formPrecio").value) : null),
-            id_vendedor: sellerId
-        };
-
+        let payloadCloud = { id_lote: nuevoId, sector: sec, manzana: mz, numero_lote: num, lat: dataVieja.lat, lng: dataVieja.lng, estado: estado, nombre: estado === "Disponible" ? null : document.getElementById("formNombre").value.trim() || null, apellido: estado === "Disponible" ? null : document.getElementById("formApellido").value.trim() || null, dni: estado === "Disponible" ? null : document.getElementById("formDni").value.trim() || null, precio: estado === "Disponible" ? null : (document.getElementById("formPrecio").value ? parseFloat(document.getElementById("formPrecio").value) : null), id_vendedor: sellerId };
         let { error } = await supabaseClient.from('lotes_pinos').upsert(payloadCloud);
         if (error) return alert("Error Cloud: " + error.message);
 
-        baseDatosLotes[nuevoId] = {
-            id: nuevoId, sector: sec, manzana: mz, numero_lote: num, lat: dataVieja.lat, lng: dataVieja.lng, estado: estado,
-            nombre: estado === "Disponible" ? "" : document.getElementById("formNombre").value.trim(),
-            apellido: estado === "Disponible" ? "" : document.getElementById("formApellido").value.trim(),
-            dni: estado === "Disponible" ? "" : document.getElementById("formDni").value.trim(),
-            precio: estado === "Disponible" ? "" : document.getElementById("formPrecio").value,
-            id_vendedor: sellerId
-        };
-
-        loteUltimoSeleccionado = nuevoId;
+        baseDatosLotes[nuevoId] = { id: nuevoId, sector: sec, manzana: mz, numero_lote: num, lat: dataVieja.lat, lng: dataVieja.lng, estado: estado, nombre: estado === "Disponible" ? "" : document.getElementById("formNombre").value.trim(), apellido: estado === "Disponible" ? "" : document.getElementById("formApellido").value.trim(), dni: estado === "Disponible" ? "" : document.getElementById("formDni").value.trim(), precio: estado === "Disponible" ? "" : document.getElementById("formPrecio").value, id_vendedor: sellerId };
         renderizarMarcadorLote(nuevoId);
-        
-        document.getElementById("formManzana").value = "";
-        document.getElementById("formNumLote").value = "";
-        document.getElementById("formNombre").value = ""; 
-        document.getElementById("formApellido").value = ""; 
-        document.getElementById("formDni").value = ""; 
-        document.getElementById("formPrecio").value = ""; 
-        document.getElementById("formVendedor").value = ""; 
-        loteUltimoSeleccionado = null;
-        
+
+        document.getElementById("formManzana").value = ""; document.getElementById("formNumLote").value = ""; document.getElementById("formNombre").value = ""; document.getElementById("formApellido").value = ""; document.getElementById("formDni").value = ""; document.getElementById("formPrecio").value = ""; document.getElementById("formVendedor").value = ""; loteUltimoSeleccionado = null;
         alert("🎉 ¡Lote sincronizado en la nube de Pinos con éxito!");
     }
 
     async function eliminarLoteActivo() {
-        if (!loteUltimoSeleccionado) return;
-        let targetId = loteUltimoSeleccionado;
-
-        let { error } = await supabaseClient.from('lotes_pinos').delete().eq('id_lote', targetId);
-        if (error) return alert("Error: " + error.message);
-
+        if (!loteUltimoSeleccionado) return; let targetId = loteUltimoSeleccionado;
+        let { error } = await supabaseClient.from('lotes_pinos').delete().eq('id_lote', targetId); if (error) return alert("Error: " + error.message);
         if(capasMarcadores[targetId]) map.removeLayer(capasMarcadores[targetId]);
-        delete capasMarcadores[targetId];
-        delete baseDatosLotes[targetId];
-        loteUltimoSeleccionado = null;
-        
-        document.getElementById("formManzana").value = ""; document.getElementById("formNumLote").value = "";
-        document.getElementById("formNombre").value = ""; document.getElementById("formApellido").value = ""; 
-        document.getElementById("formDni").value = ""; document.getElementById("formPrecio").value = ""; 
-        document.getElementById("formVendedor").value = "";
+        delete capasMarcadores[targetId]; delete baseDatosLotes[targetId]; loteUltimoSeleccionado = null;
+        document.getElementById("formManzana").value = ""; document.getElementById("formNumLote").value = ""; document.getElementById("formNombre").value = ""; document.getElementById("formApellido").value = ""; document.getElementById("formDni").value = ""; document.getElementById("formPrecio").value = ""; document.getElementById("formVendedor").value = "";
         alert("Ubicación eliminada limpiamente.");
     }
 
-    async function guardarConfiguracionLocal() {
-        if(sesionUsuario.rol !== 'Admin') return;
-        let w = parseFloat(document.getElementById("imgAncho").value);
-        let h = parseFloat(document.getElementById("imgAlto").value);
-        if(!imgBase64Privada) return alert("Selecciona una imagen.");
-
-        await supabaseClient.from('configuracion_pinos').upsert({ id: 'plano_principal', ancho: w, alto: h });
-        let tx = dbIndexed.transaction("config", "readwrite");
-        let store = tx.objectStore("config");
-        store.put(imgBase64Privada, "imagen_plano");
-        tx.oncomplete = function() { planoAnchoFijo = w; planoAltoFijo = h; alert("¡Grabado localmente!"); };
-    }
-
     function cerrarSesion() { location.reload(); }
-    async function cargarUsuariosDesdeCloud() {
-        let { data } = await supabaseClient.from('usuarios_pinos').select('*');
-        if (data) { data.forEach(u => { listaUsuariosCloud[u.id_usuario] = u.nombre_usuario; }); }
-    }
-
-    async function cargarLotesDesdeCloud() {
-        let { data } = await supabaseClient.from('lotes_pinos').select('*');
-        if (data) {
-            data.forEach(lote => {
-                baseDatosLotes[lote.id_lote] = {
-                    id: lote.id_lote, sector: lote.sector, manzana: lote.manzana, numero_lote: lote.numero_lote, lat: lote.lat, lng: lote.lng, estado: lote.estado,
-                    nombre: lote.nombre || "", apellido: lote.apellido || "", dni: lote.dni || "", 
-                    precio: lote.precio || "", id_vendedor: lote.id_vendedor
-                };
-                renderizarMarcadorLote(lote.id_lote);
-            });
-        }
-    }
-
-    function exportarAExcel() {
-        let lotesArray = Object.values(baseDatosLotes);
-        if (lotesArray.length === 0) return alert("Sin datos.");
-        let filas = lotesArray.map(l => ({
-            "Sector": l.sector, "Manzana": l.manzana, "Número de Lote": l.numero_lote, "Estado Actual": l.estado, 
-            "Nombres Cliente": l.nombre || "---", "Apellidos Cliente": l.apellido || "---", "DNI Cliente": l.dni || "---",
-            "Precio Pactado (S/.)": l.precio ? parseFloat(l.precio) : 0, "Vendedor Responsable": l.id_vendedor ? listaUsuariosCloud[l.id_vendedor] : "Disponible"
-        }));
-        let ws = XLSX.utils.json_to_sheet(filas);
-        let wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Pinos_Cloud_Auditoria");
-        XLSX.writeFile(wb, "Reporte_Pinos_Ventas_Completo.xlsx");
-    }
+    async function cargarUsuariosDesdeCloud() { let { data } = await supabaseClient.from('usuarios_pinos').select('*'); if (data) { data.forEach(u => { listaUsuariosCloud[u.id_usuario] = u.nombre_usuario; }); } }
+    async function cargarLotesDesdeCloud() { let { data } = await supabaseClient.from('lotes_pinos').select('*'); if (data) { data.forEach(lote => { baseDatosLotes[lote.id_lote] = { id: lote.id_lote, sector: lote.sector, manzana: lote.manzana, numero_lote: lote.numero_lote, lat: lote.lat, lng: lote.lng, estado: lote.estado, nombre: lote.nombre || "", apellido: lote.apellido || "", dni: lote.dni || "", precio: lote.precio || "", id_vendedor: lote.id_vendedor }; renderizarMarcadorLote(lote.id_lote); }); } }
+    function exportarAExcel() { let lotesArray = Object.values(baseDatosLotes); if (lotesArray.length === 0) return alert("Sin datos."); let filas = lotesArray.map(l => ({ "Sector": l.sector, "Manzana": l.manzana, "Número de Lote": l.numero_lote, "Estado Actual": l.estado, "Nombres Cliente": l.nombre || "---", "Apellidos Cliente": l.apellido || "---", "DNI Cliente": l.dni || "---", "Precio Pactado (S/.)": l.precio ? parseFloat(l.precio) : 0, "Vendedor Responsable": l.id_vendedor ? listaUsuariosCloud[l.id_vendedor] : "Disponible" })); let ws = XLSX.utils.json_to_sheet(filas); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Pinos_Cloud_Auditoria"); XLSX.writeFile(wb, "Reporte_Pinos_Ventas_Completo.xlsx"); }
 </script>
 </body>
 </html>
