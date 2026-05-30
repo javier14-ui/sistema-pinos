@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sistema Inmobiliaria - PINOS Pro UX</title>
+    <title>Sistema Inmobiliaria - PINOS Pro Data</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -15,11 +15,8 @@
         .login-card h3 { margin: 0; text-align: center; color: #38bdf8; font-size: 20px; }
         #wrapper { display: flex; height: 100vh; width: 100vw; flex-direction: row; visibility: hidden; }
         #mapa { flex-grow: 1; height: 100%; background: #070a13; }
-        
-        /* 🎯 CAMBIOS DE CURSOR DINÁMICOS PARA EL MAPA */
         #mapa.cursor-precision .leaflet-grab { cursor: crosshair !important; }
         #mapa.cursor-borrador .leaflet-grab { cursor: cell !important; }
-
         #sidebar { width: 440px; background: #1e293b; padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; border-left: 1px solid #334155; box-shadow: -3px 0 20px rgba(0,0,0,0.5); box-sizing: border-box; }
         h2 { margin: 0; color: #38bdf8; font-weight: 600; border-bottom: 2px solid #334155; padding-bottom: 6px; font-size: 18px; }
         .seccion { background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 6px; }
@@ -128,8 +125,14 @@
             </select>
             <input type="text" id="formNombre" placeholder="Nombres del Cliente">
             <input type="text" id="formApellido" placeholder="Apellidos del Cliente">
-            <input type="text" id="formDni" placeholder="DNI / Documento">
-            <input type="number" id="formPrecio" placeholder="Precio de Venta (S/.)">
+            <div class="grid-2">
+                <input type="text" id="formDni" placeholder="DNI / Documento">
+                <input type="text" id="formCelular" placeholder="N° Celular / Contacto">
+            </div>
+            <div class="grid-2">
+                <input type="number" id="formPrecio" placeholder="Precio (S/.)">
+                <input type="text" id="formFecha" readonly placeholder="Fecha de Registro" style="background:#273549; color:#94a3b8; text-align: center;">
+            </div>
             <input type="text" id="formVendedor" readonly placeholder="Vendedor Responsable" style="background:#334155; color:#cbd5e1;">
             <div class="grid-2">
                 <button class="btn-success" onclick="actualizarDatosLote()">💾 Guardar Datos</button>
@@ -279,7 +282,12 @@
         let tempNum = prompt("Ingresa el Número de Lote:"); if (!tempNum) return;
 
         let uniqueId = sectorFinal + "-" + tempManzana.trim() + "-" + tempNum.trim();
-        baseDatosLotes[uniqueId] = { id: uniqueId, sector: sectorFinal, manzana: tempManzana.trim(), numero_lote: tempNum.trim(), lat: lat, lng: lng, estado: herramientaActiva, nombre: "", apellido: "", dni: "", precio: "", id_vendedor: sesionUsuario.id_usuario };
+        
+        // Generar fecha actual de forma automática al instanciar el pin rápido
+        let hoy = new Date();
+        let fechaFormateada = String(hoy.getDate()).padStart(2, '0') + '/' + String(hoy.getMonth() + 1).padStart(2, '0') + '/' + hoy.getFullYear();
+
+        baseDatosLotes[uniqueId] = { id: uniqueId, sector: sectorFinal, manzana: tempManzana.trim(), numero_lote: tempNum.trim(), lat: lat, lng: lng, estado: herramientaActiva, nombre: "", apellido: "", dni: "", celular: "", precio: "", fecha_registro: fechaFormateada, id_vendedor: sesionUsuario.id_usuario };
         renderizarMarcadorLote(uniqueId); seleccionarLote(uniqueId); resetearBotonesHerramientas();
     });
 
@@ -298,18 +306,11 @@
         
         marcador.on('click', function(e) {
             L.DomEvent.stopPropagation(e);
-            
             if (herramientaActiva === 'Limpiar') {
-                if (confirm(`¿Eliminar permanentemente el Lote ${lote.numero_lote} de la Mz ${lote.manzana}?`)) { 
-                    loteUltimoSeleccionado = id; 
-                    eliminarLoteActivo(); 
-                }
+                if (confirm(`¿Eliminar permanentemente el Lote ${lote.numero_lote} de la Mz ${lote.manzana}?`)) { loteUltimoSeleccionado = id; eliminarLoteActivo(); }
                 resetearBotonesHerramientas();
-            } else { 
-                seleccionarLote(id); 
-            }
+            } else { seleccionarLote(id); }
         });
-
         capasMarcadores[id] = marcador; marcador.addTo(map);
     }
 
@@ -325,11 +326,20 @@
         document.getElementById("formNombre").value = lote.nombre; 
         document.getElementById("formApellido").value = lote.apellido;
         document.getElementById("formDni").value = lote.dni; 
+        document.getElementById("formCelular").value = lote.celular || "";
         document.getElementById("formPrecio").value = lote.precio;
+        document.getElementById("formFecha").value = lote.fecha_registro || "---";
         document.getElementById("formVendedor").value = lote.id_vendedor ? listaUsuariosCloud[lote.id_vendedor] : "Sin asignar";
     }
 
-    function evaluarEstadoVendedor() { let est = document.getElementById("formEstado").value; if (est !== "Disponible") { document.getElementById("formVendedor").value = sesionUsuario.nombre_usuario; } else { document.getElementById("formVendedor").value = "Sin asignar"; } }
+    function evaluarEstadoVendedor() { 
+        let est = document.getElementById("formEstado").value; 
+        if (est !== "Disponible") { 
+            document.getElementById("formVendedor").value = sesionUsuario.nombre_usuario; 
+        } else { 
+            document.getElementById("formVendedor").value = "Sin asignar"; 
+        } 
+    }
 
     async function actualizarDatosLote() {
         if (!loteUltimoSeleccionado) return alert("Selecciona un lote.");
@@ -341,48 +351,79 @@
 
         let sellerId = dataVieja.id_vendedor; if (estado !== "Disponible") { if (!sellerId) sellerId = sesionUsuario.id_usuario; } else { sellerId = null; }
 
+        // Si la fecha vieja no existe por alguna razón, recalculamos la actual de respaldo
+        let fechaFinal = dataVieja.fecha_registro;
+        if (!fechaFinal || estado === "Disponible") {
+            let hoy = new Date();
+            fechaFinal = String(hoy.getDate()).padStart(2, '0') + '/' + String(hoy.getMonth() + 1).padStart(2, '0') + '/' + hoy.getFullYear();
+        }
+
         if (loteUltimoSeleccionado !== nuevoId) {
             await supabaseClient.from('lotes_pinos').delete().eq('id_lote', loteUltimoSeleccionado);
             if(capasMarcadores[loteUltimoSeleccionado]) map.removeLayer(capasMarcadores[loteUltimoSeleccionado]);
             delete capasMarcadores[loteUltimoSeleccionado]; delete baseDatosLotes[loteUltimoSeleccionado];
         }
 
-        let payloadCloud = { id_lote: nuevoId, sector: sec, manzana: mz, numero_lote: num, lat: dataVieja.lat, lng: dataVieja.lng, estado: estado, nombre: estado === "Disponible" ? null : document.getElementById("formNombre").value.trim() || null, apellido: estado === "Disponible" ? null : document.getElementById("formApellido").value.trim() || null, dni: estado === "Disponible" ? null : document.getElementById("formDni").value.trim() || null, precio: estado === "Disponible" ? null : (document.getElementById("formPrecio").value ? parseFloat(document.getElementById("formPrecio").value) : null), id_vendedor: sellerId };
+        let payloadCloud = { 
+            id_lote: nuevoId, sector: sec, manzana: mz, numero_lote: num, lat: dataVieja.lat, lng: dataVieja.lng, estado: estado, 
+            nombre: estado === "Disponible" ? null : document.getElementById("formNombre").value.trim() || null, 
+            apellido: estado === "Disponible" ? null : document.getElementById("formApellido").value.trim() || null, 
+            dni: estado === "Disponible" ? null : document.getElementById("formDni").value.trim() || null, 
+            celular: estado === "Disponible" ? null : document.getElementById("formCelular").value.trim() || null, 
+            precio: estado === "Disponible" ? null : (document.getElementById("formPrecio").value ? parseFloat(document.getElementById("formPrecio").value) : null), 
+            fecha_registro: estado === "Disponible" ? null : fechaFinal,
+            id_vendedor: sellerId 
+        };
+
         let { error } = await supabaseClient.from('lotes_pinos').upsert(payloadCloud);
         if (error) return alert("Error Cloud: " + error.message);
 
-        baseDatosLotes[nuevoId] = { id: nuevoId, sector: sec, manzana: mz, numero_lote: num, lat: dataVieja.lat, lng: dataVieja.lng, estado: estado, nombre: estado === "Disponible" ? "" : document.getElementById("formNombre").value.trim(), apellido: estado === "Disponible" ? "" : document.getElementById("formApellido").value.trim(), dni: estado === "Disponible" ? "" : document.getElementById("formDni").value.trim(), precio: estado === "Disponible" ? "" : document.getElementById("formPrecio").value, id_vendedor: sellerId };
+        baseDatosLotes[nuevoId] = { id: nuevoId, sector: sec, manzana: mz, numero_lote: num, lat: dataVieja.lat, lng: dataVieja.lng, estado: estado, nombre: estado === "Disponible" ? "" : document.getElementById("formNombre").value.trim(), apellido: estado === "Disponible" ? "" : document.getElementById("formApellido").value.trim(), dni: estado === "Disponible" ? "" : document.getElementById("formDni").value.trim(), celular: estado === "Disponible" ? "" : document.getElementById("formCelular").value.trim(), precio: estado === "Disponible" ? "" : document.getElementById("formPrecio").value, fecha_registro: estado === "Disponible" ? "" : fechaFinal, id_vendedor: sellerId };
         renderizarMarcadorLote(nuevoId);
 
-        document.getElementById("formManzana").value = ""; document.getElementById("formNumLote").value = ""; document.getElementById("formNombre").value = ""; document.getElementById("formApellido").value = ""; document.getElementById("formDni").value = ""; document.getElementById("formPrecio").value = ""; document.getElementById("formVendedor").value = ""; loteUltimoSeleccionado = null;
+        document.getElementById("formManzana").value = ""; document.getElementById("formNumLote").value = ""; document.getElementById("formNombre").value = ""; document.getElementById("formApellido").value = ""; document.getElementById("formDni").value = ""; document.getElementById("formCelular").value = ""; document.getElementById("formPrecio").value = ""; document.getElementById("formFecha").value = ""; document.getElementById("formVendedor").value = ""; loteUltimoSeleccionado = null;
         alert("🎉 ¡Lote sincronizado en la nube de Pinos con éxito!");
     }
 
-    // 🛡️ BOTÓN DE ELIMINAR CON CONFIRMACIÓN DE SEGURIDAD INTEGRADA
     async function eliminarLoteActivo() {
-        if (!loteUltimoSeleccionado) return; 
-        let targetId = loteUltimoSeleccionado;
-        let dataLote = baseDatosLotes[targetId];
+        if (!loteUltimoSeleccionado) return; let targetId = loteUltimoSeleccionado; let dataLote = baseDatosLotes[targetId];
+        if (!confirm(`⚠️ ¿ESTÁS SEGURO?\n\nVas a eliminar por completo la ubicación física del Lote ${dataLote.numero_lote} (Mz ${dataLote.manzana}). Se borrarán todos los datos del cliente permanentemente.`)) return;
 
-        // 🚨 ESCUDO INTERNO: Pregunta antes de romper la base de datos
-        if (!confirm(`⚠️ ¿ESTÁS SEGURO?\n\nVas a eliminar por completo la ubicación física del Lote ${dataLote.numero_lote} (Mz ${dataLote.manzana}). Se borrarán todos los datos del cliente permanentemente.`)) {
-            return; // Cancela la ejecución si el usuario se arrepiente
-        }
-
-        let { error } = await supabaseClient.from('lotes_pinos').delete().eq('id_lote', targetId); 
-        if (error) return alert("Error: " + error.message);
-        
+        let { error } = await supabaseClient.from('lotes_pinos').delete().eq('id_lote', targetId); if (error) return alert("Error: " + error.message);
         if(capasMarcadores[targetId]) map.removeLayer(capasMarcadores[targetId]);
         delete capasMarcadores[targetId]; delete baseDatosLotes[targetId]; loteUltimoSeleccionado = null;
-        
-        document.getElementById("formManzana").value = ""; document.getElementById("formNumLote").value = ""; document.getElementById("formNombre").value = ""; document.getElementById("formApellido").value = ""; document.getElementById("formDni").value = ""; document.getElementById("formPrecio").value = ""; document.getElementById("formVendedor").value = "";
+        document.getElementById("formManzana").value = ""; document.getElementById("formNumLote").value = ""; document.getElementById("formNombre").value = ""; document.getElementById("formApellido").value = ""; document.getElementById("formDni").value = ""; document.getElementById("formCelular").value = ""; document.getElementById("formPrecio").value = ""; document.getElementById("formFecha").value = ""; document.getElementById("formVendedor").value = "";
         alert("Ubicación eliminada limpiamente de la nube.");
     }
 
     function cerrarSesion() { location.reload(); }
     async function cargarUsuariosDesdeCloud() { let { data } = await supabaseClient.from('usuarios_pinos').select('*'); if (data) { data.forEach(u => { listaUsuariosCloud[u.id_usuario] = u.nombre_usuario; }); } }
-    async function cargarLotesDesdeCloud() { let { data } = await supabaseClient.from('lotes_pinos').select('*'); if (data) { data.forEach(lote => { baseDatosLotes[lote.id_lote] = { id: lote.id_lote, sector: lote.sector, manzana: lote.manzana, numero_lote: lote.numero_lote, lat: lote.lat, lng: lote.lng, estado: lote.estado, nombre: lote.nombre || "", apellido: lote.apellido || "", dni: lote.dni || "", precio: lote.precio || "", id_vendedor: lote.id_vendedor }; renderizarMarcadorLote(lote.id_lote); }); } }
-    function exportarAExcel() { let lotesArray = Object.values(baseDatosLotes); if (lotesArray.length === 0) return alert("Sin datos."); let filas = lotesArray.map(l => ({ "Sector": l.sector, "Manzana": l.manzana, "Número de Lote": l.numero_lote, "Estado Actual": l.estado, "Nombres Cliente": l.nombre || "---", "Apellidos Cliente": l.apellido || "---", "DNI Cliente": l.dni || "---", "Precio Pactado (S/.)": l.precio ? parseFloat(l.precio) : 0, "Vendedor Responsable": l.id_vendedor ? listaUsuariosCloud[l.id_vendedor] : "Disponible" })); let ws = XLSX.utils.json_to_sheet(filas); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Pinos_Cloud_Auditoria"); XLSX.writeFile(wb, "Reporte_Pinos_Ventas_Completo.xlsx"); }
+    async function cargarLotesDesdeCloud() { let { data } = await supabaseClient.from('lotes_pinos').select('*'); if (data) { data.forEach(lote => { baseDatosLotes[lote.id_lote] = { id: lote.id_lote, sector: lote.sector, manzana: lote.manzana, numero_lote: lote.numero_lote, lat: lote.lat, lng: lote.lng, estado: lote.estado, nombre: lote.nombre || "", apellido: lote.apellido || "", dni: lote.dni || "", celular: lote.celular || "", precio: lote.precio || "", fecha_registro: lote.fecha_registro || "", id_vendedor: lote.id_vendedor }; renderizarMarcadorLote(lote.id_lote); }); } }
+
+    function exportarAExcel() {
+        let lotesArray = Object.values(baseDatosLotes);
+        if (lotesArray.length === 0) return alert("Sin datos.");
+        
+        // Incluimos Celular y Fecha de Registro en el mapeo de columnas para el Excel
+        let filas = lotesArray.map(l => ({ 
+            "Fecha de Registro": l.fecha_registro || "---",
+            "Sector": l.sector, 
+            "Manzana": l.manzana, 
+            "Número de Lote": l.numero_lote, 
+            "Estado Actual": l.estado, 
+            "Nombres Cliente": l.nombre || "---", 
+            "Apellidos Cliente": l.apellido || "---", 
+            "DNI Cliente": l.dni || "---", 
+            "Celular Contacto": l.celular || "---",
+            "Precio Pactado (S/.)": l.precio ? parseFloat(l.precio) : 0, 
+            "Vendedor Responsable": l.id_vendedor ? listaUsuariosCloud[l.id_vendedor] : "Disponible" 
+        }));
+        
+        let ws = XLSX.utils.json_to_sheet(filas);
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Pinos_Cloud_Auditoria");
+        XLSX.writeFile(wb, "Reporte_Pinos_Ventas_Completo.xlsx");
+    }
 </script>
 </body>
 </html>
