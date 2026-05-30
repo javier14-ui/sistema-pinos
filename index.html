@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sistema Inmobiliaria - PINOS Mobile Pro</title>
+    <title>Sistema Inmobiliaria - PINOS Performance Pro</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -47,11 +47,10 @@
         .herramienta-activa-rojo { border: 2px solid #ef4444 !important; background: #7f1d1d !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); }
         .herramienta-activa-borrar { border: 2px solid #ffffff !important; background: #334155 !important; box-shadow: 0 0 12px rgba(255, 255, 255, 0.4); }
 
-        /* 📱 RESPONSIVE EXTRA: RE-DISEÑO PARA CELULARES (MÁXIMO 768px de ancho) */
         @media (max-width: 768px) {
             #wrapper { flex-direction: column; }
-            #mapa { height: 50vh; width: 100vw; } /* El mapa ocupa la mitad superior de la pantalla */
-            #sidebar { width: 100vw; height: 50vh; border-left: none; border-top: 2px solid #334155; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); } /* El panel se va abajo */
+            #mapa { height: 50vh; width: 100vw; }
+            #sidebar { width: 100vw; height: 50vh; border-left: none; border-top: 2px solid #334155; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); }
         }
     </style>
 </head>
@@ -174,6 +173,7 @@
         global: { headers: { 'x-pinos-auth': 'admin_firme_2026' } }
     });
 
+    // OPTIMIZACIÓN DE RENDIMIENTO EN RENDERING DE LEAFLET
     const map = L.map('mapa', {
         crs: L.CRS.Simple,
         minZoom: -1.5,
@@ -181,7 +181,10 @@
         zoomSnap: 0.1,
         zoomDelta: 0.5,
         scrollWheelZoom: false,
-        touchZoom: true // Habilitar zoom con dos dedos en pantallas táctiles
+        touchZoom: true,
+        bounceAtZoomLimits: false, 
+        markerZoomAnimation: false, // Quita animaciones pesadas de marcadores al hacer zoom
+        fadeAnimation: true
     }).setView([500, 500], -0.5);
     
     let baseDatosLotes = {}; 
@@ -224,8 +227,13 @@
         await cargarUsuariosDesdeCloud();
         await cargarLotesDesdeCloud();
 
-        map.on('zoomend', function() { document.getElementById("slideZoom").value = map.getZoom(); });
-        setTimeout(() => { map.invalidateSize(); }, 300); // Forzar recalibración de tamaño en móviles
+        // MANEJO DE EVENTO OPTIMIZADO ASÍNCRONAMENTE CON REQUESTANIMATIONFRAME
+        map.on('zoomend', function() {
+            window.requestAnimationFrame(() => {
+                document.getElementById("slideZoom").value = map.getZoom();
+            });
+        });
+        setTimeout(() => { map.invalidateSize(); }, 300);
     }
 
     function configurarInterfazPorRol() {
@@ -236,7 +244,13 @@
         }
     }
 
-    function controlarZoomLocal() { map.setZoom(parseFloat(document.getElementById("slideZoom").value)); }
+    // MANEJO DE CONTROL LOCAL ASÍNCRONO PARA EVITAR BLOCKING UI (ALIVIA EL INP ISSUE)
+    function controlarZoomLocal() {
+        let val = parseFloat(document.getElementById("slideZoom").value);
+        window.requestAnimationFrame(() => {
+            map.setZoom(val);
+        });
+    }
 
     function cargarConfiguracionCloudYLocal() {
         return new Promise((resolve) => {
