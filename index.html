@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sistema Inmobiliaria - PINOS Universal Cloud</title>
+    <title>Sistema Inmobiliaria - PINOS Pro UX</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -15,6 +15,11 @@
         .login-card h3 { margin: 0; text-align: center; color: #38bdf8; font-size: 20px; }
         #wrapper { display: flex; height: 100vh; width: 100vw; flex-direction: row; visibility: hidden; }
         #mapa { flex-grow: 1; height: 100%; background: #070a13; }
+        
+        /* 🎯 CAMBIOS DE CURSOR DINÁMICOS PARA EL MAPA */
+        #mapa.cursor-precision .leaflet-grab { cursor: crosshair !important; }
+        #mapa.cursor-borrador .leaflet-grab { cursor: cell !important; }
+
         #sidebar { width: 440px; background: #1e293b; padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; border-left: 1px solid #334155; box-shadow: -3px 0 20px rgba(0,0,0,0.5); box-sizing: border-box; }
         h2 { margin: 0; color: #38bdf8; font-weight: 600; border-bottom: 2px solid #334155; padding-bottom: 6px; font-size: 18px; }
         .seccion { background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 6px; }
@@ -184,7 +189,6 @@
 
     function controlarZoomLocal() { let val = parseFloat(document.getElementById("slideZoom").value); window.requestAnimationFrame(() => { map.setZoom(val); }); }
 
-    // DESCARGAR IMAGEN DESDE EL STORAGE GLOBAL DE SUPABASE AUTOMÁTICAMENTE
     async function cargarConfiguracionCloud() {
         let { data } = await supabaseClient.from('configuracion_pinos').select('*').eq('id', 'plano_principal').single();
         if (data) {
@@ -193,12 +197,10 @@
             document.getElementById("imgAncho").value = planoAnchoFijo;
             document.getElementById("imgAlto").value = planoAltoFijo;
         }
-        // Construimos el enlace público de Supabase para descargar la imagen
         let urlPlanoPublico = `${SUPABASE_URL}/storage/v1/object/public/planos_pinos/plano_asociacion.png?t=${new Date().getTime()}`;
         redibujarImagenFija(urlPlanoPublico);
     }
 
-    // CARGAR ARCHIVO DESDE LA LAPTOP DEL ADMIN Y SUBIRLO AUTOMÁTICAMENTE AL STORAGE GLOBAL
     async function guardarConfiguracionCloud() {
         if(sesionUsuario.rol !== 'Admin') return;
         let fileInput = document.getElementById("inputLocalFile");
@@ -209,12 +211,10 @@
 
         if (fileInput.files.length > 0) {
             let file = fileInput.files[0];
-            // Subimos la imagen reemplazando el archivo anterior en la nube
             let { error } = await supabaseClient.storage.from('planos_pinos').upload('plano_asociacion.png', file, { cacheControl: '0', upsert: true });
             if (error) return alert("Error al subir archivo a la nube: " + error.message);
         }
-        
-        alert("🎉 ¡Plano e implicaciones grabadas en Internet para todo tu equipo!");
+        alert("🎉 ¡Plano grabado en Internet!");
         await cargarConfiguracionCloud();
     }
 
@@ -228,30 +228,35 @@
         let w = sesionUsuario.rol === 'Admin' ? parseFloat(document.getElementById("imgAncho").value) : planoAnchoFijo;
         let h = sesionUsuario.rol === 'Admin' ? parseFloat(document.getElementById("imgAlto").value) : planoAltoFijo;
         let limites = [[500 - h/2, 500 - w/2], [500 + h/2, 500 + w/2]];
-        
         imgOverlay = L.imageOverlay(urlImagen, limites);
-        imgOverlay.on('error', function() { console.log("Falta cargar el plano principal de internet."); });
         imgOverlay.addTo(map);
-        
         map.setMaxBounds(limites.map(c => [c[0] * 1.2, c[1] * 1.2]));
         map.setView([500, 500], map.getZoom());
     }
 
+    // 🎯 MANEJO DINÁMICO DE CURSORES
     function seleccionarHerramientaRapida(tipo) {
         document.getElementById("btnToolSeparado").classList.remove("herramienta-activa-amarillo");
         document.getElementById("btnToolVendido").classList.remove("herramienta-activa-rojo");
         document.getElementById("btnToolLimpiar").classList.remove("herramienta-activa-borrar");
         document.getElementById("btnToolLimpiar").style.background = "#475569";
+        
+        let contenedorMapa = document.getElementById("mapa");
+        contenedorMapa.classList.remove("cursor-precision", "cursor-borrador");
+
         herramientaActiva = tipo;
         if (tipo === 'Separado') {
             document.getElementById("btnToolSeparado").classList.add("herramienta-activa-amarillo");
             document.getElementById("txtEstadoHerramienta").innerText = "🟡 Modo Separación Listo (Haz un clic en el plano)";
+            contenedorMapa.classList.add("cursor-precision");
         } else if (tipo === 'Vendido') {
             document.getElementById("btnToolVendido").classList.add("herramienta-activa-rojo");
             document.getElementById("txtEstadoHerramienta").innerText = "🔴 Modo Venta Listo (Haz un clic en el plano)";
+            contenedorMapa.classList.add("cursor-precision");
         } else if (tipo === 'Limpiar') {
             document.getElementById("btnToolLimpiar").classList.add("herramienta-activa-borrar");
             document.getElementById("txtEstadoHerramienta").innerText = "🧹 Modo Borrador Listo (Toca un pin existente para borrarlo)";
+            contenedorMapa.classList.add("cursor-borrador");
         }
     }
 
@@ -262,6 +267,7 @@
         document.getElementById("btnToolLimpiar").classList.remove("herramienta-activa-borrar");
         document.getElementById("btnToolLimpiar").style.background = "#475569";
         document.getElementById("txtEstadoHerramienta").innerText = "Estado: Navegación Libre";
+        document.getElementById("mapa").classList.remove("cursor-precision", "cursor-borrador");
     }
 
     map.on('click', function(e) {
@@ -284,29 +290,45 @@
         return L.divIcon({ html: htmlSvg, className: 'pin-custom-map', iconSize: [30, 30], iconAnchor: [15, 30] });
     }
 
+    // 🔓 CORRECCIÓN DE EVENTOS PARA ELIMINAR EL BLOQUEO DE CLIC
     function renderizarMarcadorLote(id) {
         let lote = baseDatosLotes[id]; if (capasMarcadores[id]) map.removeLayer(capasMarcadores[id]);
         if (lote.estado === "Disponible") return;
 
         let marcador = L.marker([lote.lat, lote.lng], { icon: crearIconoSvgPin(lote.estado), interactive: true });
         marcador.bindTooltip(`<b>Sect ${lote.sector} - Mz ${lote.manzana} - Lt ${lote.numero_lote}</b><br>Estado: ${lote.estado}`, { direction: 'top', offset: [0, -30] });
+        
+        // El truco está en escuchar el 'mousedown' o 'click' deteniendo la propagación correctamente
         marcador.on('click', function(e) {
-            L.DomEvent.stopPropagation(e);
+            L.DomEvent.stopPropagation(e); // Evita que el mapa registre un clic de creación detrás del pin
+            
             if (herramientaActiva === 'Limpiar') {
-                if (confirm(`¿Eliminar permanentemente el Lote ${lote.numero_lote} de la Mz ${lote.manzana}?`)) { loteUltimoSeleccionado = id; eliminarLoteActivo(); }
+                if (confirm(`¿Eliminar permanentemente el Lote ${lote.numero_lote} de la Mz ${lote.manzana}?`)) { 
+                    loteUltimoSeleccionado = id; 
+                    eliminarLoteActivo(); 
+                }
                 resetearBotonesHerramientas();
-            } else { seleccionarLote(id); }
+            } else { 
+                seleccionarLote(id); 
+            }
         });
+
         capasMarcadores[id] = marcador; marcador.addTo(map);
     }
 
     function seleccionarLote(id) {
         loteUltimoSeleccionado = id; let lote = baseDatosLotes[id];
-        for (let k in capasMarcadores) { if(capasMarcadores[k].getElement()) capasMarcadores[k].getElement().style.opacity = "0.5"; }
+        for (let k in capasMarcadores) { if(capasMarcadores[k].getElement()) capasMarcadores[k].getElement().style.opacity = "0.4"; }
         if(capasMarcadores[id] && capasMarcadores[id].getElement()) capasMarcadores[id].getElement().style.opacity = "1.0";
-        document.getElementById("formSector").value = lote.sector; document.getElementById("formManzana").value = lote.manzana; document.getElementById("formNumLote").value = lote.numero_lote;
-        document.getElementById("formEstado").value = lote.estado; document.getElementById("formNombre").value = lote.nombre; document.getElementById("formApellido").value = lote.apellido;
-        document.getElementById("formDni").value = lote.dni; document.getElementById("formPrecio").value = lote.precio;
+        
+        document.getElementById("formSector").value = lote.sector; 
+        document.getElementById("formManzana").value = lote.manzana; 
+        document.getElementById("formNumLote").value = lote.numero_lote;
+        document.getElementById("formEstado").value = lote.estado; 
+        document.getElementById("formNombre").value = lote.nombre; 
+        document.getElementById("formApellido").value = lote.apellido;
+        document.getElementById("formDni").value = lote.dni; 
+        document.getElementById("formPrecio").value = lote.precio;
         document.getElementById("formVendedor").value = lote.id_vendedor ? listaUsuariosCloud[lote.id_vendedor] : "Sin asignar";
     }
 
